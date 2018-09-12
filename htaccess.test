@@ -1,0 +1,16 @@
+# Use this file in favor of the web/.htaccess when storing non-functional
+# rewrite-rules. An example of these "non-functional" redirects would be
+# "online marketing redirects".
+
+# Written by OnlineMarketingBundle on February 15, 2017 14:35.
+RewriteEngine On
+RewriteRule old-edge /nl/case? [R=301]
+RewriteRule old-no-1 /nl/flags?
+RewriteRule old-no-2 /nl/flags? [R=302]
+RewriteRule old-faq /nl/vragen? [L,NC,R=301]
+RewriteRule old-blog /nl/blog? [L,NC,R=301]
+RewriteRule old-contact /nl/contacteer-ons? [L,NC,R=301]
+FATAL1 SYNTAX
+FATAL2 SYNTAX
+FATAL3 SYNTAX
+FATAL4 SYNTAX
