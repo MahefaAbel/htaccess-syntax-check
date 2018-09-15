@@ -1,6 +1,6 @@
 RewriteRule old-edge /nl/case? [R=301]
 RewriteRule old-no-1 /nl/flags?
 RewriteRule old-no-2 /nl/flags? [R=302]
-RewriteRule old-faq /nl/vragen? [L,NC,R=301]
+RewriteRule old-faq /nl/vragen? [L,NC,,R=301]
 RewriteRule old-blog /nl/blog? [L,NC,R=301]
 RewriteRule old-contact /nl/contacteer-ons? [L,NC,R=301]

@@ -22,5 +22,5 @@ output=$($apachectl -f "${composedfile}" 2>&1)
 if echo "${output}" | grep --quiet --max-count=1 'Syntax error on line'
 then
     echo "syntax error"
-    exit 1
+    exit 9
 fi
