@@ -4,7 +4,7 @@
 # Usage example:
 # $ ./htaccess-line-test.sh htaccess.test
 
-APACHECTLBIN='/usr/sbin/apachectl'
+apachectl_bin='/usr/sbin/apachectl'
 if [[ $# -eq 0 ]] ; then
     echo 'Feed me a existing file.'
     exit 0
@@ -16,33 +16,37 @@ if [ ! -f $HTACCESSPATH ]; then
     exit 0
 fi
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-HTACCESSTMPPATH="${DIR}/htaccess.tmp"
-OUTPUT="${DIR}/output.tmp"
-# CONFIGPATH=$(apachectl -V | grep SERVER_CONFIG_FILE | cut -d '"' -f2)
-APACHEVERSION=$(apachectl -V | grep Apache | sed 's/.*Apache\/\(.*\) (Unix).*/\1/')
-CONFIGPATH="${DIR}/apache.${APACHEVERSION}.conf"
-cat "${CONFIGPATH}" > "${HTACCESSTMPPATH}"
-cat "${HTACCESSPATH}" >> "${HTACCESSTMPPATH}"
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+temp_dir=$(mktemp -d "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
+composed_file="${temp_dir}/htaccess"
+version=$(${apachectl_bin} -V | grep Apache | sed 's/.*Apache\/\(.*\) (Unix).*/\1/')
+conf="${dir}/apache.${version}.conf"
+if [ ! -f $conf ]; then
+    conf="${dir}/apache.2.4.33.conf"
+fi
+cat $conf > "$composed_file"
 
-$APACHECTLBIN -f "${HTACCESSTMPPATH}" >> "${OUTPUT}" 2>&1
-sed -i.bak 'N;s/:\n/: /' "${OUTPUT}"
+output_tmp_path="${temp_dir}/output.tmp"
+cat "${HTACCESSPATH}" >> "${composed_file}"
 
-ERRORSYNTAX=$(grep --max-count=1 'Syntax error on line' "${OUTPUT}")
-LINENUMBER=$(sed 's/.*line \(.*\) of.*/\1/' <<< "${ERRORSYNTAX}")
-LINE=$(sed -n "${LINENUMBER}p" "${HTACCESSTMPPATH}")
-NUMERRORSYNTAX=$(echo "$ERRORSYNTAX" | sed '/^\s*$/d' | wc -l)
-HASERRORSYNTAX=false
-if [ "$NUMERRORSYNTAX" -gt "0" ] ; then
-  HASERRORSYNTAX=true
+${apachectl_bin} -f "${composed_file}" >> "${output_tmp_path}" 2>&1
+sed -i.bak 'N;s/:\n/: /' "${output_tmp_path}"
+
+error=$(grep --max-count=1 'Syntax error on line' "${output_tmp_path}")
+line_number=$(sed 's/.*line \(.*\) of.*/\1/' <<< "${error}")
+line=$(sed -n "${line_number}p" "${composed_file}")
+num_error=$(echo "$error" | sed '/^\s*$/d' | wc -l)
+has_error=false
+if [ "$num_error" -gt "0" ] ; then
+  has_error=true
 fi
 
-if [ "$HASERRORSYNTAX" = true ] ; then
-  echo "${LINENUMBER}: \"${LINE}\" ${ERRORSYNTAX}"
+if [ "$has_error" = true ] ; then
+  echo "${line_number}: \"${line}\" ${error}"
 fi
 
-rm *.tmp *.tmp.bak
+rm -r "${temp_dir}"
 
-if [ "$HASERRORSYNTAX" = true ] ; then
+if [ "$has_error" = true ] ; then
   exit 9
 fi
